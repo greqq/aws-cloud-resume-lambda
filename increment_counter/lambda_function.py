@@ -5,6 +5,14 @@ dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table('VisitorCounter')
 
 def lambda_handler(event, context):
+    # Check if there's an unexpected body
+    if event.get("body"):
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'error': 'Bad Request: unexpected request body'})
+        }
+    
+    # If there's no body, proceed with updating the counter
     response = table.update_item(
         Key={'id': 'counter'},
         UpdateExpression='ADD visits :inc',
@@ -12,6 +20,7 @@ def lambda_handler(event, context):
         ReturnValues="UPDATED_NEW"
     )
     
+    # Return number of visits
     return {
         'statusCode': 200,
         'headers': {
@@ -19,5 +28,5 @@ def lambda_handler(event, context):
             'Access-Control-Allow-Methods': 'GET,POST',
             'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
         },
-        'body': str(response['Attributes']['visits']) 
+        'body': str(response['Attributes']['visits'])
     }
