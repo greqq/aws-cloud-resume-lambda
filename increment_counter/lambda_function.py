@@ -14,6 +14,12 @@ def hash_ip(ip_address):
 
 
 def lambda_handler(event, context):
+    if event.get("body"):
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"error": "Unexpected request body"}),
+        }
+
     ip_address = event["requestContext"]["identity"]["sourceIp"]
     hashed_ip = hash_ip(ip_address)
     timeframe_limit = datetime.now() - timedelta(days=1)
