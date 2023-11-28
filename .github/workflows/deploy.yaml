@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   deploy:
@@ -21,6 +24,23 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ secrets.AWS_REGION }}
+    
+      - name: Install Syft
+        run: curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+  
+      - name: Generate SBOM
+        run: syft packages dir:./increment_counter -o json > sbom.json
+      
+      - name: Install Grype
+        run: curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Scan for vulnerabilities
+        id: grype-scan
+        run: grype sbom:sbom.json
+
+      - name: Fail if vulnerabilities are found
+        if: ${{ steps.grype-scan.outcome == 'failure' }}
+        run: exit 1
 
       - name: Zip the Lambda function
         run: |
