@@ -1,11 +1,18 @@
+import os
 import json
 import boto3
 from hashlib import sha256
 from datetime import datetime, timedelta
 
+visitor_counter_table_name = os.environ.get("VISITOR_COUNTER_TABLE", "VisitorCounter")
+unique_visitor_table_name = os.environ.get("UNIQUE_VISITOR_TABLE", "UniqueVisitors")
+
 dynamodb = boto3.resource("dynamodb")
-visitor_counter_table = dynamodb.Table("VisitorCounter")
-unique_visitor_table = dynamodb.Table("UniqueVisitors")
+visitor_counter_table = dynamodb.Table(visitor_counter_table_name)
+unique_visitor_table = dynamodb.Table(unique_visitor_table_name)
+
+environment_type = os.environ.get("ENVIRONMENT_TYPE", "production")
+allow_origin = "https://webflowprojects.cc" if environment_type == "production" else "*"
 
 
 def hash_ip(ip_address):
@@ -57,7 +64,7 @@ def lambda_handler(event, context):
     return {
         "statusCode": 200,
         "headers": {
-            "Access-Control-Allow-Origin": "https://webflowprojects.cc",
+            "Access-Control-Allow-Origin": allow_origin,
             "Access-Control-Allow-Methods": "POST",
             "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
         },
